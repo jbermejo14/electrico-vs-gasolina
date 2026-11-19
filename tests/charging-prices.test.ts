@@ -3,6 +3,8 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import {
+  CHARGING_MARKET_ID,
+  CHARGING_MARKET_LABEL,
   formatUpdatedAt,
   getChargingPrices,
   HOME_TARIFFS,
@@ -71,7 +73,7 @@ test('un fichero que no es objeto o sin updated_at lanza error', () => {
 test('publicPrice devuelve el precio del operador y el de mercado', () => {
   const prices = getChargingPrices();
   assert.equal(publicPrice(prices, 'iberdrola', 'dc_150'), 0.6);
-  assert.equal(publicPrice(prices, 'market', 'dc_50'), 0.45);
+  assert.equal(publicPrice(prices, CHARGING_MARKET_ID, 'dc_50'), 0.45);
 });
 
 test('publicPrice con un operador inexistente lanza error', () => {
@@ -82,4 +84,15 @@ test('formatUpdatedAt escribe el mes en español', () => {
   assert.equal(formatUpdatedAt('2026-11'), 'noviembre de 2026');
   assert.equal(formatUpdatedAt('2027-01'), 'enero de 2027');
   assert.throws(() => formatUpdatedAt('2026-13'), /AAAA-MM/);
+});
+
+test('un operador con el identificador reservado de la media del mercado lanza error', () => {
+  const raw = loadRaw();
+  raw.operators[CHARGING_MARKET_ID] = raw.operators.tesla;
+  assert.throws(() => parseChargingPrices(raw), /operators.market.*reservado/);
+});
+
+test('las constantes de la media del mercado conservan su valor público', () => {
+  assert.equal(CHARGING_MARKET_ID, 'market');
+  assert.equal(CHARGING_MARKET_LABEL, 'Media del mercado');
 });

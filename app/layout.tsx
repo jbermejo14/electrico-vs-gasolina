@@ -4,8 +4,8 @@ import './globals.css';
 import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
 import { AdSenseScript, getAdSenseClient } from '@/components/AdSenseScript';
-import { formatMitecoMonth } from '@/lib/format';
 import { getFuelPriceSummary } from '@/lib/fuelPriceData';
+import { homeTitle } from '@/lib/homePage';
 import { absoluteUrl, getSiteUrl, SITE_NAME } from '@/lib/site';
 
 const inter = Inter({
@@ -44,16 +44,16 @@ const THEME_SCRIPT = `
 `;
 
 const homeUrl = absoluteUrl('/');
-// El mes sale de la fecha de MITECO de los datos, no se escribe a mano.
-const homeTitle = `Coche eléctrico o gasolina: coste por km en España (${formatMitecoMonth(getFuelPriceSummary().mitecoDate)})`;
+const siteDescription =
+  'Coste por kilómetro de un coche eléctrico frente a gasolina o diésel, con precios medios reales de MITECO y tarifas de recarga orientativas.';
 
 export const metadata: Metadata = {
   metadataBase: new URL(getSiteUrl()),
   title: {
-    default: homeTitle,
+    default: homeTitle(getFuelPriceSummary()),
     template: `%s | ${SITE_NAME}`
   },
-  description: 'Compara el coste por kilómetro de un coche eléctrico y uno de gasolina o diésel con el precio medio real de los carburantes en España y tarifas de recarga orientativas. Resultado orientativo, no oficial.',
+  description: siteDescription,
   authors: [{ name: SITE_NAME }],
   creator: SITE_NAME,
   publisher: SITE_NAME,
@@ -66,7 +66,7 @@ export const metadata: Metadata = {
     url: homeUrl,
     siteName: SITE_NAME,
     title: 'Coche eléctrico o gasolina: ¿cuánto cuesta el kilómetro?',
-    description: 'Coste por 100 km y por año de un coche eléctrico frente a uno de gasolina o diésel, con precios medios reales de combustible (MITECO) y tarifas de recarga orientativas.'
+    description: siteDescription
   }
 };
 

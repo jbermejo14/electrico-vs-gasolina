@@ -90,3 +90,25 @@ test('la validación eléctrica lanza RangeError en español', () => {
     assert.throws(() => blendedPricePerKwh(homeShare, 0.18, 0.6), RangeError);
   }
 });
+
+// Con 100 km al año el ahorro anual es la diferencia entre los costes por 100 km:
+// combustión 1 l x precio frente a eléctrico 0,9 kWh / 0,9 x 1 €/kWh = 1 €.
+const THRESHOLD_COMBUSTION: CombustionInput = { consumptionLitresPer100Km: 1, pricePerLitre: 1, annualKm: 100 };
+const THRESHOLD_ELECTRIC: ElectricInput = {
+  consumptionKwhPer100Km: 0.9,
+  homeShare: 1,
+  homePricePerKwh: 1,
+  publicPricePerKwh: 1,
+  annualKm: 100,
+};
+
+function thresholdComparison(savings: number) {
+  return compareCosts({ ...THRESHOLD_COMBUSTION, pricePerLitre: 1 + savings }, THRESHOLD_ELECTRIC);
+}
+
+test('umbral de igualdad: un ahorro de 0,004 EUR es igual y uno de 0,006 EUR da ganador', () => {
+  assert.equal(thresholdComparison(0.004).cheaper, 'equal');
+  assert.equal(thresholdComparison(-0.004).cheaper, 'equal');
+  assert.equal(thresholdComparison(0.006).cheaper, 'electric');
+  assert.equal(thresholdComparison(-0.006).cheaper, 'combustion');
+});

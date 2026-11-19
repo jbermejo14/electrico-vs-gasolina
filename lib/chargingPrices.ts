@@ -45,8 +45,10 @@ export const OPERATOR_NAMES: Record<string, string> = {
 /** €/kWh; por encima es un error del dato. */
 export const MAX_VALID_KWH_PRICE = 2;
 
-/** Identificador reservado para el precio medio de mercado. */
-const CHARGING_MARKET_ID = 'market';
+/** Identificador reservado para el precio medio de mercado: ningún operador del fichero puede usarlo. */
+export const CHARGING_MARKET_ID = 'market';
+/** Etiqueta visible de la media del mercado. */
+export const CHARGING_MARKET_LABEL = 'Media del mercado';
 const CHARGING_SPANISH_LOCALE = 'es';
 const CHARGING_UPDATED_AT_PATTERN = /^(\d{4})-(0[1-9]|1[0-2])$/;
 const CHARGING_MONTH_NAMES = [
@@ -97,6 +99,9 @@ function chargingParseOperators(value: unknown): ChargingPrices['operators'] {
   const record = chargingRequireRecord(value, 'operators');
   return Object.entries(record)
     .map(([id, prices]) => {
+      if (id === CHARGING_MARKET_ID) {
+        throw new Error(`Tarifas de recarga inválidas: operators.${id} usa el identificador reservado de la media del mercado.`);
+      }
       const name = OPERATOR_NAMES[id];
       if (name === undefined) {
         throw new Error(`Tarifas de recarga inválidas: operators.${id} no tiene nombre en OPERATOR_NAMES.`);

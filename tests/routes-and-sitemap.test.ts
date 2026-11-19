@@ -5,7 +5,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { getFuelPriceSummary } from '../lib/fuelPriceData';
 import type { FuelPriceSummary } from '../lib/fuelPrices';
-import { fuelPricesOf, provinceParams, rankProvincesByGasoline, sitemapEntries } from '../lib/routes';
+import { provinceParams, sitemapEntries } from '../lib/routes';
 
 const SITE_URL_VARIABLE = 'NEXT_PUBLIC_SITE_URL';
 const TEST_SITE_URL = 'https://ododex.com';
@@ -18,10 +18,10 @@ const FIXTURE: FuelPriceSummary = {
   mitecoDate: '18/11/2026 18:03:47',
   national: { gasolina95: { average: 1.6, stations: 100 }, diesel: { average: 1.8, stations: 100 } },
   provinces: [
-    { slug: 'barata', name: 'Barata', gasolina95: { average: 1.5, stations: 20 }, diesel: { average: 1.7, stations: 20 } },
-    { slug: 'cara', name: 'Cara', gasolina95: { average: 1.7, stations: 20 }, diesel: { average: 1.9, stations: 20 } },
-    { slug: 'solo-diesel', name: 'Solo diésel', gasolina95: null, diesel: { average: 1.8, stations: 12 } },
-    { slug: 'sin-datos', name: 'Sin datos', gasolina95: null, diesel: null },
+    { slug: 'barata-b', pageSlug: 'barata', name: 'Barata', gasolina95: { average: 1.5, stations: 20 }, diesel: { average: 1.7, stations: 20 } },
+    { slug: 'cara-c', pageSlug: 'cara', name: 'Cara', gasolina95: { average: 1.7, stations: 20 }, diesel: { average: 1.9, stations: 20 } },
+    { slug: 'diesel-solo', pageSlug: 'solo-diesel', name: 'Solo diésel', gasolina95: null, diesel: { average: 1.8, stations: 12 } },
+    { slug: 'sin-datos-x', pageSlug: 'sin-datos', name: 'Sin datos', gasolina95: null, diesel: null },
   ],
 };
 
@@ -62,16 +62,6 @@ test('sitemapEntries: todas las URL son absolutas y cuelgan de la ruta base', ()
 test('sitemapEntries: lastModified es la fecha de MITECO', () => {
   const [home] = sitemapEntries(FIXTURE);
   assert.equal((home.lastModified as Date).toISOString(), '2026-11-18T00:00:00.000Z');
-});
-
-test('rankProvincesByGasoline: de la más barata a la más cara, sin las que no tienen gasolina 95', () => {
-  const slugs = rankProvincesByGasoline(FIXTURE.provinces).map(province => province.slug);
-  assert.deepEqual(slugs, ['barata', 'cara']);
-});
-
-test('fuelPricesOf: extrae la media o null', () => {
-  assert.deepEqual(fuelPricesOf(FIXTURE.provinces[2]), { gasolina95: null, diesel: 1.8 });
-  assert.deepEqual(fuelPricesOf(FIXTURE.national), { gasolina95: 1.6, diesel: 1.8 });
 });
 
 test('getFuelPriceSummary: una ruta que no existe lanza el error de datos ausentes', () => {

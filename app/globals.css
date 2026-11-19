@@ -711,7 +711,7 @@ body {
   }
 
   .result-card,
-.scenario-card {
+  .scenario-card {
     display: flex;
     flex-direction: column;
     gap: 0.25rem;
@@ -746,7 +746,15 @@ body {
     font-variant-numeric: tabular-nums;
     color: var(--text-primary);
     line-height: 1.15;
-    overflow-wrap: anywhere;
+    /* Cifra y unidad ("10,32 €") no se separan en dos líneas. */
+    white-space: nowrap;
+  }
+
+  /* La etiqueta se ajusta a su contenido en vez de ocupar todo el ancho de la tarjeta. */
+  .result-card .tag,
+  .scenario-card .tag {
+    align-self: flex-start;
+    width: fit-content;
   }
 
   .result-unit {
@@ -801,7 +809,7 @@ body {
   }
 
   .table-row-highlight th,
-.table-row-highlight td {
+  .table-row-highlight td {
     background-color: var(--accent-subtle);
     font-weight: 700;
   }
@@ -815,7 +823,8 @@ body {
   }
 
   .data-sources-list a,
-.province-list a {
+  .province-list a,
+  .guide-table th[scope="row"] a {
     color: var(--accent-primary);
     text-decoration: underline;
   }

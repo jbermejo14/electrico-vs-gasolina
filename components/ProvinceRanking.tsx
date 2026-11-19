@@ -2,8 +2,15 @@ import React from 'react';
 import Link from 'next/link';
 import { DEFAULT_CONSUMPTION_L_100KM } from '@/lib/costPerKm';
 import { formatDecimal, formatEuros, formatPricePerLitre } from '@/lib/format';
-import { FUEL_LABELS, FUEL_TYPES, type FuelAverage, type FuelType, type ProvinceFuelPrices } from '@/lib/fuelPrices';
-import { rankProvincesByGasoline } from '@/lib/routes';
+import {
+  FUEL_LABELS,
+  FUEL_TYPES,
+  rankProvincesByGasoline,
+  type FuelAverage,
+  type FuelType,
+  type ProvinceFuelPrices,
+} from '@/lib/fuelPrices';
+import { referenceCombustionPer100Km } from '@/lib/referenceCosts';
 
 export interface ProvinceRankingProps {
   /** Provincias con datos (cualquier orden). */
@@ -34,7 +41,7 @@ function RankingCells({ fuel, average }: { fuel: FuelType; average: FuelAverage 
   return (
     <>
       <td className="tabular-nums text-right">{formatPricePerLitre(average.average)}</td>
-      <td className="tabular-nums text-right">{formatEuros(average.average * DEFAULT_CONSUMPTION_L_100KM[fuel])}</td>
+      <td className="tabular-nums text-right">{formatEuros(referenceCombustionPer100Km(fuel, average.average))}</td>
     </>
   );
 }
@@ -64,9 +71,9 @@ export function ProvinceRanking({ provinces }: ProvinceRankingProps) {
           </thead>
           <tbody>
             {rankingOrder(provinces).map((province) => (
-              <tr key={province.slug}>
+              <tr key={province.pageSlug}>
                 <th scope="row">
-                  <Link href={`/${province.slug}`}>{province.name}</Link>
+                  <Link href={`/${province.pageSlug}`}>{province.name}</Link>
                 </th>
                 {FUEL_TYPES.map((fuel) => (
                   <RankingCells key={fuel} fuel={fuel} average={province[fuel]} />

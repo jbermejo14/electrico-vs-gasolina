@@ -1,16 +1,14 @@
 import React from 'react';
-import { publicPrice, type ChargingPrices } from '@/lib/chargingPrices';
+import { CHARGING_MARKET_ID, publicPrice, type ChargingPrices } from '@/lib/chargingPrices';
 import {
-  DEFAULT_ANNUAL_KM,
   DEFAULT_CONSUMPTION_L_100KM,
   DEFAULT_EV_CONSUMPTION_KWH_100KM,
   DEFAULT_HOME_TARIFF,
   DEFAULT_PUBLIC_LEVEL,
-  combustionCost,
-  electricCost,
 } from '@/lib/costPerKm';
 import { formatDecimal, formatEuros, formatPricePerKwh, formatPricePerLitre } from '@/lib/format';
 import { FUEL_LABELS, FUEL_TYPES, type FuelType } from '@/lib/fuelPrices';
+import { referenceCombustionPer100Km, referenceElectricPer100Km } from '@/lib/referenceCosts';
 
 export interface ScenarioCardsProps {
   /** Precio medio del lugar por combustible; null si no hay dato. */
@@ -27,41 +25,31 @@ interface Scenario {
   per100Km: number | null;
 }
 
-const SCENARIO_MARKET_OPERATOR = 'market';
 const SCENARIO_ALL_HOME = 1;
 const SCENARIO_ALL_PUBLIC = 0;
 
 function scenarioFuel(fuel: FuelType, price: number | null): Scenario {
-  const consumption = DEFAULT_CONSUMPTION_L_100KM[fuel];
-  const per100Km =
-    price === null
-      ? null
-      : combustionCost({ consumptionLitresPer100Km: consumption, pricePerLitre: price, annualKm: DEFAULT_ANNUAL_KM })
-          .per100Km;
   return {
     key: fuel,
     title: FUEL_LABELS[fuel],
-    detail: price === null ? 'Sin datos de precio' : `${formatDecimal(consumption)} l/100 km a ${formatPricePerLitre(price)}`,
-    per100Km,
+    detail:
+      price === null
+        ? 'Sin datos de precio'
+        : `${formatDecimal(DEFAULT_CONSUMPTION_L_100KM[fuel])} l/100 km a ${formatPricePerLitre(price)}`,
+    per100Km: price === null ? null : referenceCombustionPer100Km(fuel, price),
   };
 }
 
 function scenarioElectric(key: string, title: string, charging: ChargingPrices, homeShare: number): Scenario {
-  const homePrice = charging.home[DEFAULT_HOME_TARIFF];
-  const fastPrice = publicPrice(charging, SCENARIO_MARKET_OPERATOR, DEFAULT_PUBLIC_LEVEL);
-  const { per100Km } = electricCost({
-    consumptionKwhPer100Km: DEFAULT_EV_CONSUMPTION_KWH_100KM,
-    homeShare,
-    homePricePerKwh: homePrice,
-    publicPricePerKwh: fastPrice,
-    annualKm: DEFAULT_ANNUAL_KM,
-  });
-  const price = homeShare === SCENARIO_ALL_HOME ? homePrice : fastPrice;
+  const price =
+    homeShare === SCENARIO_ALL_HOME
+      ? charging.home[DEFAULT_HOME_TARIFF]
+      : publicPrice(charging, CHARGING_MARKET_ID, DEFAULT_PUBLIC_LEVEL);
   return {
     key,
     title,
     detail: `${formatDecimal(DEFAULT_EV_CONSUMPTION_KWH_100KM)} kWh/100 km a ${formatPricePerKwh(price)}`,
-    per100Km,
+    per100Km: referenceElectricPer100Km(charging, homeShare),
   };
 }
 
@@ -74,12 +62,16 @@ function scenarioList(props: ScenarioCardsProps): Scenario[] {
 }
 
 function scenarioCheapestKey(scenarios: Scenario[]): string | null {
-  let cheapest: Scenario | null = null;
+  let cheapestKey: string | null = null;
+  let cheapestCost = 0;
   for (const scenario of scenarios) {
     if (scenario.per100Km === null) continue;
-    if (cheapest === null || scenario.per100Km < (cheapest.per100Km ?? Infinity)) cheapest = scenario;
+    if (cheapestKey === null || scenario.per100Km < cheapestCost) {
+      cheapestKey = scenario.key;
+      cheapestCost = scenario.per100Km;
+    }
   }
-  return cheapest === null ? null : cheapest.key;
+  return cheapestKey;
 }
 
 /** Respuesta rápida de cada página: coste por 100 km de los cuatro escenarios de referencia. */

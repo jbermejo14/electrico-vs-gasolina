@@ -1,9 +1,12 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { compareCosts } from '../lib/costPerKm';
 import {
+  formatAnnualSavings,
   formatDecimal,
   formatEuros,
   formatKm,
+  formatMitecoDay,
   formatMitecoMonth,
   formatPercent,
   formatPricePerKwh,
@@ -58,8 +61,9 @@ test('formatMitecoMonth: mes y año de la fecha de MITECO', () => {
   assert.equal(formatMitecoMonth('02/01/2027 08:00:00'), 'enero de 2027');
 });
 
-test('formatMitecoMonth y mitecoDateToDate: una fecha mal formada lanza error en español', () => {
+test('formatMitecoMonth, formatMitecoDay y mitecoDateToDate: una fecha mal formada lanza error en español', () => {
   assert.throws(() => formatMitecoMonth('2026-11-18'), /Fecha de MITECO inválida/);
+  assert.throws(() => formatMitecoDay('hoy'), /Fecha de MITECO inválida/);
   assert.throws(() => mitecoDateToDate(''), /Fecha de MITECO inválida/);
 });
 
@@ -70,4 +74,27 @@ test('mitecoDateToDate: día, mes y año en UTC', () => {
 test('formatDecimal: coma decimal y solo los decimales necesarios', () => {
   assert.equal(formatDecimal(6.5), '6,5');
   assert.equal(formatDecimal(17), '17');
+});
+
+test('formatMitecoDay: el día sin la hora', () => {
+  assert.equal(formatMitecoDay('18/11/2026 18:03:47'), '18/11/2026');
+  assert.equal(formatMitecoDay('02/01/2027'), '02/01/2027');
+});
+
+const SAVINGS_COMBUSTION = { consumptionLitresPer100Km: 1, annualKm: 100 };
+const SAVINGS_ELECTRIC = {
+  consumptionKwhPer100Km: 0.9,
+  homeShare: 1,
+  homePricePerKwh: 1,
+  publicPricePerKwh: 1,
+  annualKm: 100,
+};
+
+test('formatAnnualSavings: ahorro, sobrecoste y empate según el umbral de la comparación', () => {
+  const saving = compareCosts({ ...SAVINGS_COMBUSTION, pricePerLitre: 11 }, SAVINGS_ELECTRIC);
+  assert.equal(formatPlain(formatAnnualSavings(saving)), 'El eléctrico te ahorra 10 € al año');
+  const extra = compareCosts({ ...SAVINGS_COMBUSTION, pricePerLitre: 1 }, { ...SAVINGS_ELECTRIC, homePricePerKwh: 3 });
+  assert.equal(formatPlain(formatAnnualSavings(extra)), 'El eléctrico te cuesta 2 € más al año');
+  const equal = compareCosts({ ...SAVINGS_COMBUSTION, pricePerLitre: 1.004 }, SAVINGS_ELECTRIC);
+  assert.equal(formatAnnualSavings(equal), 'El coste anual de los dos es prácticamente igual');
 });

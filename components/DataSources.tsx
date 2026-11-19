@@ -1,5 +1,6 @@
 import React from 'react';
 import { formatUpdatedAt } from '@/lib/chargingPrices';
+import { formatMitecoDay } from '@/lib/format';
 import type { FuelPriceSummary } from '@/lib/fuelPrices';
 
 export interface DataSourcesProps {
@@ -21,7 +22,7 @@ export function DataSources({ summary, chargingUpdatedAt }: DataSourcesProps) {
           <a href={summary.sourceUrl} rel="noopener noreferrer" target="_blank">
             {summary.source}
           </a>
-          , con datos del {summary.mitecoDate}.
+          , con datos del {formatMitecoDay(summary.mitecoDate)}.
         </li>
         <li>Electricidad: tarifas de recarga recopiladas por Ododex, {formatUpdatedAt(chargingUpdatedAt)}.</li>
       </ul>

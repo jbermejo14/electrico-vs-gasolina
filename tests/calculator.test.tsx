@@ -98,3 +98,16 @@ test('calculadora: ofrece la media del mercado y los operadores', () => {
     assert.ok(html.includes(`>${operator.name}</option>`), `Falta ${operator.name}`);
   }
 });
+
+test('calculadora: el rango y su marca usan el máximo del 100 %', () => {
+  const html = calculatorHtml(DIESEL_PRICE);
+  assert.ok(html.includes('max="100"'));
+  assert.ok(html.includes('<span>100 %</span>'));
+});
+
+test('calculadora: los títulos de las tarjetas son h4 bajo el h3 "Resultado"', () => {
+  const html = calculatorHtml(DIESEL_PRICE);
+  assert.ok(html.includes('<h3 class="calc-legend">Resultado</h3>'));
+  assert.ok(html.includes('<h4 class="result-card-title">Eléctrico</h4>'));
+  assert.ok(html.includes('<h4 class="result-card-title">Combustión (Gasolina 95)</h4>'));
+});

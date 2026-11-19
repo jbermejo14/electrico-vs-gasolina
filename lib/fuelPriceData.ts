@@ -9,6 +9,8 @@ const FUEL_PRICE_DATA_MISSING_MESSAGE =
 /**
  * Lee y valida el resumen de precios generado por el importador.
  * Solo para componentes de servidor (usa fs). Sin argumento lee data/fuel-prices.json de la raíz del proyecto.
+ *
+ * @param filePath Ruta alternativa del fichero; existe para las pruebas, que no dependen del fichero real.
  */
 export function getFuelPriceSummary(filePath?: string): FuelPriceSummary {
   const target = filePath ?? path.join(process.cwd(), FUEL_PRICE_DATA_DEFAULT_FILE);

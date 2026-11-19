@@ -1,11 +1,10 @@
 import type { MetadataRoute } from 'next';
 import { mitecoDateToDate } from './format';
-import { provincesWithData, type FuelAverage, type FuelPriceSummary, type FuelType, type ProvinceFuelPrices } from './fuelPrices';
+import { provincesWithData, type FuelPriceSummary } from './fuelPrices';
 import { absoluteUrl } from './site';
 
 const ROUTES_HOME_PRIORITY = 1;
 const ROUTES_PROVINCE_PRIORITY = 0.8;
-const ROUTES_LOCALE = 'es';
 
 export interface ProvinceRouteParams {
   provincia: string;
@@ -13,7 +12,7 @@ export interface ProvinceRouteParams {
 
 /** Parámetros de `generateStaticParams`: una página por provincia con datos. */
 export function provinceParams(summary: FuelPriceSummary): ProvinceRouteParams[] {
-  return provincesWithData(summary).map((province) => ({ provincia: province.slug }));
+  return provincesWithData(summary).map((province) => ({ provincia: province.pageSlug }));
 }
 
 /** Entradas del sitemap: la principal y las provincias con datos; sin legales. */
@@ -27,27 +26,4 @@ export function sitemapEntries(summary: FuelPriceSummary): MetadataRoute.Sitemap
     priority: ROUTES_PROVINCE_PRIORITY,
   }));
   return [home, ...provinces];
-}
-
-/**
- * Provincias con precio de gasolina 95, de la más barata a la más cara.
- * Empates por nombre. Es el orden del ranking de la web.
- */
-export function rankProvincesByGasoline(provinces: ProvinceFuelPrices[]): ProvinceFuelPrices[] {
-  return provinces
-    .filter((province) => province.gasolina95 !== null)
-    .sort((a, b) => {
-      const difference = (a.gasolina95?.average ?? 0) - (b.gasolina95?.average ?? 0);
-      return difference !== 0 ? difference : a.name.localeCompare(b.name, ROUTES_LOCALE);
-    });
-}
-
-/** Precios medios por combustible (€/l), en el formato que reciben la calculadora y los escenarios. */
-export function fuelPricesOf(
-  averages: Record<FuelType, FuelAverage | null>,
-): Record<FuelType, number | null> {
-  return {
-    gasolina95: averages.gasolina95?.average ?? null,
-    diesel: averages.diesel?.average ?? null,
-  };
 }

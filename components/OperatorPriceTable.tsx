@@ -1,5 +1,6 @@
 import React from 'react';
 import {
+  CHARGING_MARKET_LABEL,
   POWER_LEVELS,
   POWER_LEVEL_LABELS,
   type ChargingPrices,
@@ -10,8 +11,6 @@ import { formatPricePerKwh } from '@/lib/format';
 export interface OperatorPriceTableProps {
   charging: ChargingPrices;
 }
-
-const OPERATOR_TABLE_MARKET_LABEL = 'Media del mercado';
 
 function OperatorPriceRow({ name, prices, highlighted }: { name: string; prices: PriceByLevel; highlighted?: boolean }) {
   return (
@@ -47,7 +46,7 @@ export function OperatorPriceTable({ charging }: OperatorPriceTableProps) {
             </tr>
           </thead>
           <tbody>
-            <OperatorPriceRow name={OPERATOR_TABLE_MARKET_LABEL} prices={charging.marketDefault} highlighted />
+            <OperatorPriceRow name={CHARGING_MARKET_LABEL} prices={charging.marketDefault} highlighted />
             {charging.operators.map((operator) => (
               <OperatorPriceRow key={operator.id} name={operator.name} prices={operator.prices} />
             ))}

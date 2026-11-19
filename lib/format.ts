@@ -1,4 +1,5 @@
 import { formatUpdatedAt } from './chargingPrices';
+import type { Comparison } from './costPerKm';
 
 const FORMAT_LOCALE = 'es-ES';
 /** Espacio duro: evita que la cifra y su unidad queden en líneas distintas. */
@@ -10,6 +11,8 @@ const FORMAT_PERCENT_FACTOR = 100;
 /** "18/11/2026 18:03:47": día, mes y año de la fecha de MITECO. */
 const FORMAT_MITECO_DATE_PATTERN = /^(\d{2})\/(\d{2})\/(\d{4})/;
 const FORMAT_MONTH_PAD_LENGTH = 2;
+const FORMAT_DAY_PAD_LENGTH = 2;
+const FORMAT_ANNUAL_DECIMALS = 0;
 
 const formatterByDecimals = new Map<number, Intl.NumberFormat>();
 
@@ -77,4 +80,22 @@ export function formatMitecoMonth(mitecoDate: string): string {
 export function mitecoDateToDate(mitecoDate: string): Date {
   const { day, month, year } = formatParseMitecoDate(mitecoDate);
   return new Date(Date.UTC(year, month - 1, day));
+}
+
+/** "18/11/2026" (sin hora) a partir de la fecha de MITECO "18/11/2026 18:03:47". */
+export function formatMitecoDay(mitecoDate: string): string {
+  const { day, month, year } = formatParseMitecoDate(mitecoDate);
+  const pad = (value: number, length: number) => String(value).padStart(length, '0');
+  return `${pad(day, FORMAT_DAY_PAD_LENGTH)}/${pad(month, FORMAT_MONTH_PAD_LENGTH)}/${year}`;
+}
+
+/**
+ * Frase de ahorro anual de una comparación. Usa `comparison.cheaper` (el mismo umbral de
+ * igualdad que la calculadora) para no contradecirse con ella.
+ */
+export function formatAnnualSavings(comparison: Comparison): string {
+  const amount = formatEuros(Math.abs(comparison.annualSavings), FORMAT_ANNUAL_DECIMALS);
+  if (comparison.cheaper === 'electric') return `El eléctrico te ahorra ${amount} al año`;
+  if (comparison.cheaper === 'combustion') return `El eléctrico te cuesta ${amount} más al año`;
+  return 'El coste anual de los dos es prácticamente igual';
 }

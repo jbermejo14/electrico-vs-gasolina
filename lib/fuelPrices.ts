@@ -8,7 +8,10 @@ export interface FuelAverage {
 }
 
 export interface ProvinceFuelPrices {
+  /** Slug de MITECO tal cual; sirve para enlazar a la web de gasolineras. */
   slug: string;
+  /** Slug de las URL de esta web, derivado del nombre con `provincePageSlug`. */
+  pageSlug: string;
   name: string;
   gasolina95: FuelAverage | null;
   diesel: FuelAverage | null;
@@ -44,6 +47,11 @@ const FUEL_SOURCE_URL =
   'https://sedeaplicaciones.minetur.gob.es/ServiciosRESTCarburantes/PreciosCarburantes/';
 const THOUSANDTHS_PER_EURO = 1000;
 const SPANISH_LOCALE = 'es';
+const PAGE_SLUG_NAME_SEPARATOR = '/';
+const PAGE_SLUG_JOINER = '-';
+const PAGE_SLUG_DIACRITICS = /[\u0300-\u036f]/g;
+const PAGE_SLUG_INVALID_CHARACTERS = /[^a-z0-9]+/g;
+const PAGE_SLUG_EDGE_HYPHENS = /^-+|-+$/g;
 
 /** Acumulador en milésimas de euro (enteros) para evitar errores de coma flotante. */
 interface FuelPricesAccumulator {
@@ -95,6 +103,8 @@ function fuelPricesPublishable(total: FuelPricesAccumulator): FuelAverage | null
 }
 
 function fuelPricesAdd(total: FuelPricesAccumulator, price: number): void {
+  // Los precios de MITECO vienen con 3 decimales, así que el redondeo a milésimas no los altera.
+  // Si algún día llegaran con más, se redondean aquí, antes de promediar, para sumar enteros exactos.
   total.sumThousandths += Math.round(price * THOUSANDTHS_PER_EURO);
   total.stations += 1;
 }
@@ -141,16 +151,53 @@ function fuelPricesHasProvince(
   );
 }
 
+function fuelPricesSlugify(text: string): string {
+  return text
+    .normalize('NFD')
+    .replace(PAGE_SLUG_DIACRITICS, '')
+    .toLowerCase()
+    .replace(PAGE_SLUG_INVALID_CHARACTERS, PAGE_SLUG_JOINER)
+    .replace(PAGE_SLUG_EDGE_HYPHENS, '');
+}
+
+/**
+ * Slug de URL a partir del nombre legible: minúsculas, sin tildes ni diacríticos,
+ * guiones entre palabras. Si el nombre tiene "/" ("Castellón / Castelló") se unen las mitades
+ * distintas; si dan el mismo slug ("Valencia / València") queda una sola.
+ */
+export function provincePageSlug(name: string): string {
+  const parts = name.split(PAGE_SLUG_NAME_SEPARATOR).map(fuelPricesSlugify).filter((part) => part !== '');
+  return [...new Set(parts)].join(PAGE_SLUG_JOINER);
+}
+
 function fuelPricesToProvince(province: FuelPricesProvinceAccumulator): ProvinceFuelPrices {
   return {
     slug: province.slug,
+    pageSlug: provincePageSlug(province.name),
     name: province.name,
     gasolina95: fuelPricesPublishable(province.totals.gasolina95),
     diesel: fuelPricesPublishable(province.totals.diesel),
   };
 }
 
-/** Valida la estructura y calcula las medias. Lanza Error en español si falta fechaMiteco o estaciones no es un array. */
+/** Lanza Error si un nombre no produce slug de página o si dos provincias producen el mismo. */
+function fuelPricesCheckPageSlugs(provinces: ProvinceFuelPrices[]): void {
+  const namesBySlug = new Map<string, string>();
+  for (const province of provinces) {
+    if (province.pageSlug === '') {
+      throw new Error(`La provincia "${province.name}" no produce un slug de página válido.`);
+    }
+    const previous = namesBySlug.get(province.pageSlug);
+    if (previous !== undefined) {
+      throw new Error(
+        `Las provincias "${previous}" y "${province.name}" producen el mismo slug de página "${province.pageSlug}".`,
+      );
+    }
+    namesBySlug.set(province.pageSlug, province.name);
+  }
+}
+
+/** Valida la estructura y calcula las medias. Lanza Error en español si falta fechaMiteco, estaciones no es un array o dos provincias comparten pageSlug. */
 export function summarizeFuelPrices(payload: unknown): SummaryReport {
   const { mitecoDate, stations } = fuelPricesCheckPayload(payload);
   const national = fuelPricesNewTotals();
@@ -176,6 +223,11 @@ export function summarizeFuelPrices(payload: unknown): SummaryReport {
     }
   }
 
+  const provinceList = [...provinces.values()]
+    .map(fuelPricesToProvince)
+    .sort((a, b) => a.name.localeCompare(b.name, SPANISH_LOCALE));
+  fuelPricesCheckPageSlugs(provinceList);
+
   const summary: FuelPriceSummary = {
     source: FUEL_SOURCE,
     sourceUrl: FUEL_SOURCE_URL,
@@ -184,9 +236,7 @@ export function summarizeFuelPrices(payload: unknown): SummaryReport {
       gasolina95: fuelPricesToAverage(national.gasolina95),
       diesel: fuelPricesToAverage(national.diesel),
     },
-    provinces: [...provinces.values()]
-      .map(fuelPricesToProvince)
-      .sort((a, b) => a.name.localeCompare(b.name, SPANISH_LOCALE)),
+    provinces: provinceList,
   };
   return { summary, discardedPrices };
 }
@@ -215,12 +265,14 @@ function fuelPricesParseProvince(value: unknown, index: number): ProvinceFuelPri
   if (
     !fuelPricesIsRecord(value) ||
     !fuelPricesIsNonEmptyText(value.slug) ||
+    !fuelPricesIsNonEmptyText(value.pageSlug) ||
     !fuelPricesIsNonEmptyText(value.name)
   ) {
-    throw new Error(`Precios de combustible inválidos: ${field} necesita slug y name.`);
+    throw new Error(`Precios de combustible inválidos: ${field} necesita slug, pageSlug y name.`);
   }
   return {
     slug: value.slug,
+    pageSlug: value.pageSlug,
     name: value.name,
     gasolina95: fuelPricesParseOptionalAverage(value.gasolina95, `${field}.gasolina95`),
     diesel: fuelPricesParseOptionalAverage(value.diesel, `${field}.diesel`),
@@ -263,7 +315,30 @@ export function provincesWithData(summary: FuelPriceSummary): ProvinceFuelPrices
   return summary.provinces.filter((province) => province.gasolina95 !== null || province.diesel !== null);
 }
 
-/** Busca una provincia por slug; undefined si no existe o no tiene datos. */
-export function findProvince(summary: FuelPriceSummary, slug: string): ProvinceFuelPrices | undefined {
-  return provincesWithData(summary).find((province) => province.slug === slug);
+/** Busca una provincia por el slug de página (`pageSlug`); undefined si no existe o no tiene datos. */
+export function findProvince(summary: FuelPriceSummary, pageSlug: string): ProvinceFuelPrices | undefined {
+  return provincesWithData(summary).find((province) => province.pageSlug === pageSlug);
+}
+
+/**
+ * Provincias con precio de gasolina 95, de la más barata a la más cara.
+ * Empates por nombre. Es el orden del ranking de la web.
+ */
+export function rankProvincesByGasoline(provinces: ProvinceFuelPrices[]): ProvinceFuelPrices[] {
+  return provinces
+    .filter((province) => province.gasolina95 !== null)
+    .sort((a, b) => {
+      const difference = (a.gasolina95?.average ?? 0) - (b.gasolina95?.average ?? 0);
+      return difference !== 0 ? difference : a.name.localeCompare(b.name, SPANISH_LOCALE);
+    });
+}
+
+/** Precios medios por combustible (€/l), en el formato que reciben la calculadora y los escenarios. */
+export function averagePricesOf(
+  averages: Record<FuelType, FuelAverage | null>,
+): Record<FuelType, number | null> {
+  return {
+    gasolina95: averages.gasolina95?.average ?? null,
+    diesel: averages.diesel?.average ?? null,
+  };
 }
