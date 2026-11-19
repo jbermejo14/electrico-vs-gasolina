@@ -6,6 +6,7 @@ import { Footer } from '@/components/Footer';
 import { AdSenseScript, getAdSenseClient } from '@/components/AdSenseScript';
 import { getFuelPriceSummary } from '@/lib/fuelPriceData';
 import { homeTitle } from '@/lib/homePage';
+import { getNetworkSections } from '@/lib/network';
 import { absoluteUrl, getSiteUrl, SITE_NAME } from '@/lib/site';
 
 const inter = Inter({
@@ -99,7 +100,7 @@ export default function RootLayout({
       <body>
         <Header />
         {children}
-        <Footer mostrarConsentimiento={getAdSenseClient() !== null} />
+        <Footer mostrarConsentimiento={getAdSenseClient() !== null} redSecciones={getNetworkSections()} />
         <AdSenseScript />
       </body>
     </html>

@@ -5,6 +5,7 @@ import { AdSlot } from '@/components/AdSlot';
 import { Breadcrumbs } from '@/components/Breadcrumbs';
 import { CostCalculator } from '@/components/CostCalculator';
 import { DataSources } from '@/components/DataSources';
+import { NetworkLinks } from '@/components/NetworkLinks';
 import { ScenarioCards } from '@/components/ScenarioCards';
 import { getChargingPrices } from '@/lib/chargingPrices';
 import { getFuelPriceSummary } from '@/lib/fuelPriceData';
@@ -21,11 +22,11 @@ import {
   provinceRankingText,
   type ProvinceContext,
 } from '@/lib/provincePage';
+import { getNetworkLinks } from '@/lib/network';
 import { provinceParams } from '@/lib/routes';
-import { SECTION_NAME, SITE_NAME, absoluteUrl } from '@/lib/site';
+import { BASE_PATH, SECTION_NAME, SITE_NAME, absoluteUrl } from '@/lib/site';
 import { formatEuros } from '@/lib/format';
 import { referenceCombustionPer100Km, referenceElectricPer100Km } from '@/lib/referenceCosts';
-import { getNetworkLinksForRoute } from '@/lib/network';
 
 export const dynamicParams = false;
 
@@ -106,6 +107,31 @@ function ProvinceExternalLink({ href, label }: { href: string; label: string }) 
   );
 }
 
+/** Enlaces fijos de respaldo para cuando no hay fichero de red (desarrollo local). */
+function ProvinceFallbackLinks({ province }: { province: ProvinceFuelPrices }) {
+  return (
+    <section aria-labelledby="province-links-title">
+      <h2 id="province-links-title" className="text-xl font-bold mb-3">
+        Más información
+      </h2>
+      <div className="grid gap-3 sm:grid-cols-2">
+        <ProvinceExternalLink
+          href={`/es/gasolineras/provincia/${province.slug}`}
+          label={`Gasolineras más baratas en ${province.name}`}
+        />
+        <ProvinceExternalLink href="/es/puntos-recarga" label="Puntos de recarga" />
+      </div>
+    </section>
+  );
+}
+
+/** Bloque de red de la provincia; sin enlaces de red, los fijos de respaldo. */
+function ProvinceLinks({ province }: { province: ProvinceFuelPrices }) {
+  const links = getNetworkLinks(`${BASE_PATH}/${province.pageSlug}`);
+  if (links.length === 0) return <ProvinceFallbackLinks province={province} />;
+  return <NetworkLinks links={links} />;
+}
+
 function ProvinceRankingSection({ province, ranked }: { province: ProvinceFuelPrices; ranked: ProvinceFuelPrices[] }) {
   const text = provinceRankingText(province, ranked);
   if (text === null) return null;
@@ -158,26 +184,6 @@ export default async function ProvincePage({ params }: ProvincePageParams) {
       `Si se realiza ese mismo kilometraje con un vehículo eléctrico recargando en casa en tarifa valle, el coste anual desciende a ${formatEuros(evCostHome)}, lo que representa un ahorro de ${formatEuros(annualSavingsVsGas)} cada año.`;
   }
 
-  const networkLinks = getNetworkLinksForRoute(`/es/electrico-vs-gasolina/${province.pageSlug}`) || [];
-  const fallbackLinks = [
-    {
-      seccion: '/es/gasolineras',
-      texto: `Gasolineras más baratas en ${province.name}`,
-      href: `/es/gasolineras/provincia/${province.slug}`,
-    },
-    {
-      seccion: '/es/puntos-recarga',
-      texto: `Puntos de recarga en ${province.name}`,
-      href: `/es/puntos-recarga/provincia/${province.slug}`,
-    },
-    {
-      seccion: '/es/itv',
-      texto: `Centros ITV en ${province.name}`,
-      href: `/es/itv/centros/${province.slug}`,
-    },
-  ];
-  const crossLinks = networkLinks.length > 0 ? networkLinks : fallbackLinks;
-
   return (
     <main className="main-wrapper">
       <Breadcrumbs
@@ -204,16 +210,7 @@ export default async function ProvincePage({ params }: ProvincePageParams) {
 
         <CostCalculator fuelPrices={fuelPrices} charging={charging} placeLabel={province.name} />
         <AdSlot />
-        <section aria-labelledby="province-links-title">
-          <h2 id="province-links-title" className="text-xl font-bold mb-3">
-            Movilidad y servicios en {province.name}
-          </h2>
-          <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-3">
-            {crossLinks.map((link, idx) => (
-              <ProvinceExternalLink key={idx} href={link.href} label={link.texto} />
-            ))}
-          </div>
-        </section>
+        <ProvinceLinks province={province} />
         <ProvinceRankingSection province={province} ranked={ranked} />
         <section aria-labelledby="province-list-title">
           <h2 id="province-list-title" className="text-xl font-bold mb-3">

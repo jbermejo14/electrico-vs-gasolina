@@ -341,3 +341,10 @@ Descriptions de 160 caracteres como máximo (lo comprueba una prueba).
 2. M2, M3 y M4 (independientes; un solo encargo).
 3. M5 (páginas).
 4. Integración en `ododex-sitio` y verificación en pantalla (sesión principal).
+
+## 8. Enlaces de red de Ododex (2026-11-19)
+
+- `lib/network.ts` lee en compilación el JSON de `ODODEX_RED_ENLACES` (formato en `../ododex-sitio/ARCHITECTURE.md` §10), con caché por ruta. Sin variable o sin fichero devuelve `null`; JSON inválido o `version !== 1` lanza un `Error` en español.
+- Pie (`components/Footer.tsx`, recibe `redSecciones` desde `app/layout.tsx`): « Otras webs de Ododex » con las secciones sin la propia, `<a href>` tal cual (son de otra sección: sin `next/link` ni `assetPath`). Sin red no se pinta.
+- `/[provincia]`: `components/NetworkLinks.tsx` pinta « En Ododex también » con los enlaces de la clave `/es/electrico-vs-gasolina/{pageSlug}`. Sustituye a los enlaces fijos de « Más información », que solo se mantienen como respaldo si no hay red (desarrollo local).
+- Pruebas: `tests/network.test.tsx`.

@@ -1,56 +1,84 @@
-import { existsSync, readFileSync } from 'node:fs';
-import path from 'node:path';
+import fs from 'node:fs';
+import { BASE_PATH } from './site';
 
-/** Variable de entorno con la ruta de red-enlaces.json generada por ododex-sitio */
-export const NETWORK_ENV_VAR = 'ODODEX_RED_ENLACES';
+/** Variable de entorno con la ruta absoluta de config/red-enlaces.json de ododex-sitio. */
+export const NETWORK_FILE_VARIABLE = 'ODODEX_RED_ENLACES';
 
+const NETWORK_FORMAT_VERSION = 1;
+
+/** Sección (otra web) de la red de Ododex. */
 export interface NetworkSection {
   ruta: string;
   nombre: string;
   descripcion: string;
 }
 
+/** Enlace de una página a una página equivalente de otra sección. Las rutas son desde la raíz del dominio. */
 export interface NetworkLink {
   seccion: string;
   texto: string;
   href: string;
 }
 
-interface NetworkData {
+export interface NetworkData {
   version: number;
   secciones: NetworkSection[];
-  enlaces?: Record<string, NetworkLink[]>;
+  enlaces: Record<string, NetworkLink[]>;
 }
 
-let cachedData: NetworkData | null = null;
+// El fichero pesa más de 1 MB: se lee una sola vez por ruta durante la compilación.
+const networkCache = new Map<string, NetworkData>();
 
-function resolveNetworkFile(): string | null {
-  const envPath = process.env[NETWORK_ENV_VAR];
-  if (envPath && existsSync(envPath)) return envPath;
-  const siblingPath = path.resolve(process.cwd(), '../ododex-sitio/config/red-enlaces.json');
-  if (existsSync(siblingPath)) return siblingPath;
-  return null;
+function networkFileError(filePath: string, reason: string): Error {
+  return new Error(
+    `El fichero de red de Ododex (${filePath}) no es válido: ${reason}. Regenéralo con npm run red en ododex-sitio.`,
+  );
 }
 
-export function getNetworkData(): NetworkData | null {
-  if (cachedData) return cachedData;
-  const file = resolveNetworkFile();
-  if (!file) return null;
+function parseNetwork(filePath: string, text: string): NetworkData {
+  let raw: unknown;
   try {
-    const raw = JSON.parse(readFileSync(file, 'utf8')) as NetworkData;
-    if (raw && raw.version === 1) {
-      cachedData = raw;
-      return cachedData;
-    }
-  } catch (e) {
-    console.error('Error cargando red-enlaces.json:', e);
+    raw = JSON.parse(text);
+  } catch {
+    throw networkFileError(filePath, 'no es JSON');
   }
-  return null;
+  const data = raw as Partial<NetworkData> | null;
+  if (data === null || typeof data !== 'object' || data.version !== NETWORK_FORMAT_VERSION) {
+    throw networkFileError(filePath, `se esperaba version ${NETWORK_FORMAT_VERSION}`);
+  }
+  if (!Array.isArray(data.secciones) || typeof data.enlaces !== 'object' || data.enlaces === null) {
+    throw networkFileError(filePath, 'faltan "secciones" o "enlaces"');
+  }
+  return data as NetworkData;
 }
 
-/** Devuelve los enlaces cruzados contextuales para una ruta concreta o lista vacía si no existe. */
-export function getNetworkLinksForRoute(route: string): NetworkLink[] {
-  const data = getNetworkData();
-  if (!data || !data.enlaces) return [];
-  return data.enlaces[route] || [];
+/**
+ * Lee el JSON de la red (solo en compilación, usa fs) con caché por ruta.
+ * Sin variable de entorno o sin fichero devuelve null: desarrollo local, sin enlaces de red.
+ * Lanza Error si el JSON es inválido o su versión no es la 1.
+ *
+ * @param filePath Ruta alternativa; existe para las pruebas. Por defecto, la variable ODODEX_RED_ENLACES.
+ */
+export function loadNetwork(filePath: string | undefined = process.env[NETWORK_FILE_VARIABLE]): NetworkData | null {
+  if (!filePath || !fs.existsSync(filePath)) return null;
+  const cached = networkCache.get(filePath);
+  if (cached) return cached;
+  const data = parseNetwork(filePath, fs.readFileSync(filePath, 'utf8'));
+  networkCache.set(filePath, data);
+  return data;
+}
+
+/** Secciones de la red sin la propia (para el pie). null si no hay red. */
+export function getNetworkSections(ownRoute: string = BASE_PATH, filePath?: string): NetworkSection[] | null {
+  const network = loadNetwork(filePath);
+  if (network === null) return null;
+  return network.secciones.filter((section) => section.ruta !== ownRoute);
+}
+
+/**
+ * Enlaces de una página a otras secciones. La clave va desde la raíz del dominio y sin barra final
+ * (por ejemplo '/es/electrico-vs-gasolina/alicante'). Vacío si no hay red o la página no tiene enlaces.
+ */
+export function getNetworkLinks(pageKey: string, filePath?: string): NetworkLink[] {
+  return loadNetwork(filePath)?.enlaces[pageKey] ?? [];
 }
