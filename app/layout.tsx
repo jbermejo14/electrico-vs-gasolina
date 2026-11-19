@@ -4,6 +4,8 @@ import './globals.css';
 import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
 import { AdSenseScript, getAdSenseClient } from '@/components/AdSenseScript';
+import { formatMitecoMonth } from '@/lib/format';
+import { getFuelPriceSummary } from '@/lib/fuelPriceData';
 import { absoluteUrl, getSiteUrl, SITE_NAME } from '@/lib/site';
 
 const inter = Inter({
@@ -42,11 +44,13 @@ const THEME_SCRIPT = `
 `;
 
 const homeUrl = absoluteUrl('/');
+// El mes sale de la fecha de MITECO de los datos, no se escribe a mano.
+const homeTitle = `Coche eléctrico o gasolina: coste por km en España (${formatMitecoMonth(getFuelPriceSummary().mitecoDate)})`;
 
 export const metadata: Metadata = {
   metadataBase: new URL(getSiteUrl()),
   title: {
-    default: 'Coche eléctrico o gasolina: coste por km en España',
+    default: homeTitle,
     template: `%s | ${SITE_NAME}`
   },
   description: 'Compara el coste por kilómetro de un coche eléctrico y uno de gasolina o diésel con el precio medio real de los carburantes en España y tarifas de recarga orientativas. Resultado orientativo, no oficial.',

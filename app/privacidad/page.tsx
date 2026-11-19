@@ -34,7 +34,7 @@ export default function PrivacidadPage() {
 
         <h2>Qué datos se tratan</h2>
         <p>
-          Esta web no tiene formularios ni cuentas de usuario. Las calculadoras funcionan en tu navegador: los datos que introduces (kilómetros, consumos, precios, etc.) no se envían a ningún servidor.
+          Esta web no tiene formularios ni cuentas de usuario. La calculadora funciona en tu navegador: los datos que introduces (kilómetros al año, consumo, precios) no se envían a ningún servidor.
         </p>
         <ul>
           <li>

@@ -80,9 +80,14 @@ test('anuncios: ninguna página legal ni la 404 importa AdSlot', () => {
 });
 
 test(`anuncios: ninguna página pasa de ${MAX_SLOTS_PER_PAGE} AdSlot`, () => {
-  const homeSlots = adCountSlots(path.join('app', 'page.tsx'));
-  assert.ok(homeSlots <= MAX_SLOTS_PER_PAGE, `la home tiene ${homeSlots}`);
   for (const file of adListPageFiles(APP_DIRECTORY)) {
     assert.ok(adCountSlots(file) <= MAX_SLOTS_PER_PAGE, `${file} supera ${MAX_SLOTS_PER_PAGE} AdSlot`);
+  }
+});
+
+test('anuncios: la principal y la de provincia tienen al menos un AdSlot', () => {
+  const pages = [path.join(APP_DIRECTORY, PAGE_FILE_NAME), path.join(APP_DIRECTORY, '[provincia]', PAGE_FILE_NAME)];
+  for (const file of pages) {
+    assert.ok(adCountSlots(file) >= 1, `${file} no tiene AdSlot`);
   }
 });

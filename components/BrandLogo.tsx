@@ -12,7 +12,6 @@ export function BrandLogo() {
   return (
     <>
       {/* SVG estáticos: next/image no aporta optimización y obligaría a configurar `dangerouslyAllowSVG`. */}
-      {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         className="brand-logo brand-logo-light"
         src={assetPath('/brand/ododex-logo-light.svg')}
@@ -21,7 +20,6 @@ export function BrandLogo() {
         height={LOGO_HEIGHT}
       />
       {/* SVG estáticos: next/image no aporta optimización y obligaría a configurar `dangerouslyAllowSVG`. */}
-      {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         className="brand-logo brand-logo-dark"
         src={assetPath('/brand/ododex-logo-dark.svg')}
