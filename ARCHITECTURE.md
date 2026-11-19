@@ -106,7 +106,8 @@ interface FuelAverage {
 }
 
 interface ProvinceFuelPrices {
-  slug: string;         // provinciaSlug de MITECO, tal cual
+  slug: string;         // provinciaSlug de MITECO, tal cual; solo para enlazar a /es/gasolineras/provincia/{slug}
+  pageSlug: string;     // slug de la URL de esta web, derivado de name con provincePageSlug ("a-coruna", "las-palmas")
   name: string;         // provincia, tal cual
   gasolina95: FuelAverage | null;   // null si hay menos de MIN_STATIONS_FOR_AVERAGE
   diesel: FuelAverage | null;
@@ -141,9 +142,23 @@ export function parseFuelPriceSummary(value: unknown): FuelPriceSummary;
 /** Provincias con al menos una media publicable (las que tienen página). */
 export function provincesWithData(summary: FuelPriceSummary): ProvinceFuelPrices[];
 
-/** Busca una provincia por slug; undefined si no existe o no tiene datos. */
-export function findProvince(summary: FuelPriceSummary, slug: string): ProvinceFuelPrices | undefined;
+/** Busca una provincia por pageSlug; undefined si no existe o no tiene datos. */
+export function findProvince(summary: FuelPriceSummary, pageSlug: string): ProvinceFuelPrices | undefined;
+
+/**
+ * Slug de URL a partir del nombre legible: minúsculas, sin diacríticos, guiones; si el nombre tiene "/"
+ * y las dos mitades dan el mismo slug, una sola ("Valencia / València" → "valencia").
+ */
+export function provincePageSlug(name: string): string;
+
+/** Provincias ordenadas por coste de gasolina 95 ascendente; después las que solo tienen diésel. */
+export function rankProvincesByGasoline(provinces: ProvinceFuelPrices[]): ProvinceFuelPrices[];
+
+/** Medias de un lugar como precios sueltos (null si no hay media). */
+export function averagePricesOf(averages: Record<FuelType, FuelAverage | null>): Record<FuelType, number | null>;
 ```
+
+Las URL usan `pageSlug` (mejor para SEO que el slug de MITECO, que pospone el artículo: `coruna-a`, `palmas-las`). `summarizeFuelPrices` lanza Error si dos provincias dan el mismo `pageSlug`.
 
 Reglas: un precio `null` significa que la estación no vende ese combustible (no cuenta como descartado). Un precio no numérico, no finito o fuera de `[MIN_VALID_PRICE, MAX_VALID_PRICE]` se descarta y suma a `discardedPrices`. Una estación sin `provinciaSlug` o `provincia` de texto no vacío se descarta entera (también cuenta).
 
@@ -175,6 +190,8 @@ export const POWER_LEVELS: readonly PowerLevel[];               // en el orden d
 export const POWER_LEVEL_LABELS: Record<PowerLevel, string>;    // 'Alterna hasta 22 kW', 'Rápida 50 kW', 'Rápida 150 kW', 'Ultrarrápida de más de 150 kW'
 export const HOME_TARIFFS: readonly HomeTariff[];
 export const HOME_TARIFF_LABELS: Record<HomeTariff, string>;    // 'PVPC en horas valle', 'Tarifa nocturna para coche eléctrico', 'Tarifa de precio único'
+export const CHARGING_MARKET_ID = 'market';                     // operador reservado: la media del mercado (no puede existir en el JSON)
+export const CHARGING_MARKET_LABEL = 'Media del mercado';
 export const OPERATOR_NAMES: Record<string, string>;            // iberdrola → 'Iberdrola', endesa → 'Endesa X Way', repsol → 'Repsol', zunder → 'Zunder', wenea → 'Wenea', acciona → 'Acciona', tesla → 'Tesla', ionity → 'Ionity', edp → 'EDP', electra → 'Electra', fastned → 'Fastned', totalenergies → 'TotalEnergies', emovili → 'Emovili'
 export const MAX_VALID_KWH_PRICE = 2;                           // €/kWh; por encima es un error del dato
 
@@ -243,11 +260,25 @@ Validación: consumos, precios y `annualKm` deben ser números finitos `> 0` (`a
 
 **Responsabilidad:** las páginas estáticas, la calculadora interactiva y el SEO.
 
-**Formato de cifras** (`lib/format.ts`): `formatEuros(value, decimals = 2)` → `"9,75 €"`; `formatPricePerLitre(v)` → `"1,523 €/l"`; `formatPricePerKwh(v)` → `"0,18 €/kWh"`; `formatPercent(share)` → `"80 %"`; `formatKm(n)` → `"15.000 km"`. Todo con `Intl.NumberFormat('es-ES')`. Se usan en servidor y cliente.
+**Formato de cifras** (`lib/format.ts`): `formatEuros(value, decimals = 2)` → `"9,75 €"`; `formatPricePerLitre(v)` → `"1,523 €/l"`; `formatPricePerKwh(v)` → `"0,18 €/kWh"`; `formatPercent(share)` → `"80 %"`; `formatKm(n)` → `"15.000 km"`; `formatDecimal(v)`; `formatMitecoDay(mitecoDate)` → `"18/11/2026"`; `formatMitecoMonth(mitecoDate)` → `"noviembre de 2026"`; `formatAnnualSavings(comparison)` → frase de ahorro según `comparison.cheaper`. Todo con `Intl.NumberFormat('es-ES')` (agrupación de miles siempre, espacio duro antes de la unidad). Se usan en servidor y cliente. La hora de MITECO no se muestra.
+
+**Lógica de página, pura y probada** (`lib/`):
+
+| Módulo | Contenido |
+|---|---|
+| `referenceCosts.ts` | `referenceCombustionPer100Km(fuel, pricePerLitre)` y `referenceElectricPer100Km(charging, homeShare)`: coste por 100 km con los valores por defecto de M4 (casa con `DEFAULT_HOME_TARIFF`, pública con la media del mercado y `DEFAULT_PUBLIC_LEVEL`). Los usan `ScenarioCards`, `ProvinceRanking`, las páginas y el FAQ. |
+| `faq.ts` | `buildFaqItems(summary, charging)`: preguntas frecuentes con cifras calculadas. |
+| `homePage.ts` | `homeTitle(summary)` (layout y principal) y `homeDescription(summary, charging)`. |
+| `provincePage.ts` | `provinceDifferenceText`, `provinceComparisonSentences`, `provinceRankingText`, `provinceDescription`. La diferencia con la media se redondea a 3 decimales antes de elegir "más/menos/igual". |
+| `routes.ts` | `provinceParams(summary)` y `sitemapEntries(summary)`. |
+| `structuredData.ts` | Solo constructores JSON-LD: `breadcrumbJsonLd`, `webApplicationJsonLd`, `faqPageJsonLd`. |
+| `calculatorState.ts` | Estado de la calculadora: `calculatorInitialState`, `calculatorValidate`, `calculatorCompare` (null si hay entradas inválidas), `calculatorReduce` (reductor puro; acciones `editText`, `editHomePrice`, `setFuel`, `setHomeTariff`, `setHomePercent`, `setOperator`, `setLevel`). Ninguna función lanza. |
+
+Descriptions de 160 caracteres como máximo (lo comprueba una prueba).
 
 **Componentes:**
 
-- `components/CostCalculator.tsx` (`'use client'`). Props: `{ fuelPrices: Record<FuelType, number | null>; charging: ChargingPrices; placeLabel: string }` (`placeLabel`: `"España"` o el nombre de la provincia). Estado y controles (todos con `<label>`, objetivos táctiles de 44 px):
+- `components/CostCalculator.tsx` (`'use client'`, con `useReducer(calculatorReduce)`; campos en `CalculatorFields.tsx` y resultado en `CalculatorResults.tsx`). Props: `{ fuelPrices: Record<FuelType, number | null>; charging: ChargingPrices; placeLabel: string }` (`placeLabel`: `"España"` o el nombre de la provincia). Estado y controles (todos con `<label>`, objetivos táctiles de 44 px):
   1. Kilómetros al año (número, por defecto `DEFAULT_ANNUAL_KM`).
   2. Combustible: gasolina 95 / diésel (solo los que tengan precio); consumo l/100 km (por defecto según combustible); precio €/l (rellenado con la media del lugar, editable; al cambiar de combustible se rellena de nuevo).
   3. Eléctrico: consumo kWh/100 km; porcentaje cargado en casa (rango 0-100, paso 10); tarifa de casa (las tres de referencia o "Otra", con su precio editable); recarga pública: operador ("Media del mercado" u operador) y nivel de potencia, con el precio resultante editable.
@@ -263,7 +294,7 @@ Validación: consumos, precios y `annualKm` deben ser números finitos `> 0` (`a
 | Ruta | Página | Contenido en orden |
 |---|---|---|
 | `/` | `app/page.tsx` | h1 "Coche eléctrico o gasolina: ¿cuánto cuesta el kilómetro?"; `ScenarioCards` nacional; `CostCalculator` con medias nacionales; `AdSlot`; `ProvinceRanking`; `OperatorPriceTable`; preguntas frecuentes (4-6, visibles); `DataSources`; `AdSlot` |
-| `/[provincia]` | `app/[provincia]/page.tsx` | migas (Ododex › Eléctrico vs gasolina › Provincia); h1 "Coche eléctrico o gasolina en {Provincia}: coste por km"; `ScenarioCards`; frase comparando con la media nacional ("En {Provincia} la gasolina 95 cuesta de media 1,512 €/l, 0,011 € menos que la media de España"); `CostCalculator` con las medias de la provincia; `AdSlot`; enlace a `/es/gasolineras/provincia/{slug}` ("Gasolineras más baratas en {Provincia}") y a `/es/puntos-recarga` ("Puntos de recarga"); posición de la provincia en el ranking (más barata/más cara) y enlaces a la anterior y la siguiente del ranking; lista compacta de todas las provincias; `DataSources` |
+| `/[provincia]` (por `pageSlug`) | `app/[provincia]/page.tsx` | migas (Eléctrico vs gasolina › Provincia, dos niveles como el resto de la red); h1 "Coche eléctrico o gasolina en {Provincia}: coste por km"; `ScenarioCards`; frase comparando con la media nacional ("En {Provincia} la gasolina 95 cuesta de media 1,512 €/l, 0,011 € menos que la media de España"); `CostCalculator` con las medias de la provincia; `AdSlot`; enlace a `/es/gasolineras/provincia/{slug}` ("Gasolineras más baratas en {Provincia}") y a `/es/puntos-recarga` ("Puntos de recarga"); posición de la provincia en el ranking (más barata/más cara) y enlaces a la anterior y la siguiente del ranking; lista compacta de todas las provincias; `DataSources` |
 | `/aviso-legal`, `/privacidad`, `/cookies` | M1 | `noindex, follow`; sin anuncios |
 
 `app/[provincia]/page.tsx`: `generateStaticParams` desde `provincesWithData(getFuelPriceSummary())`, `dynamicParams = false`; slug inexistente → 404 real (`notFound()`). Los enlaces a otras secciones (`/es/gasolineras/...`, `/es/puntos-recarga`) son `<a>` normales, no `next/link`, porque están fuera del `basePath`.
@@ -272,7 +303,7 @@ Validación: consumos, precios y `annualKm` deben ser números finitos `> 0` (`a
 
 - Title y description únicos por página con cifras reales. Principal: `"Coche eléctrico o gasolina: coste por km en España ({mes año})"`. Provincia: `"Eléctrico o gasolina en {Provincia}: coste por km"` y una description con el €/100 km de gasolina y de eléctrico en casa.
 - Canonical y Open Graph con `absoluteUrl`.
-- JSON-LD: `BreadcrumbList` en todas; `WebApplication` (categoría `FinanceApplication`, `offers.price = 0`) en la principal; `FAQPage` solo en la principal, con las mismas preguntas que se ven.
+- JSON-LD: `BreadcrumbList` en las páginas con migas visibles (provincias; lo emite `Breadcrumbs`); `WebApplication` (categoría `FinanceApplication`, `offers.price = 0`) en la principal; `FAQPage` solo en la principal, con las mismas preguntas que se ven.
 - `app/sitemap.ts` (`force-static`): la principal y todas las provincias con datos; sin legales.
 - Fuente y fecha visibles en cada página (`DataSources`).
 
