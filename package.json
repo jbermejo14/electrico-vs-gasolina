@@ -4,7 +4,8 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build --webpack",
+    "import-fuel": "node --import tsx scripts/import-fuel-prices.ts",
+    "build": "npm run import-fuel && next build --webpack",
     "test": "node --import tsx --test \"tests/**/*.test.ts\" \"tests/**/*.test.tsx\""
   },
   "dependencies": {

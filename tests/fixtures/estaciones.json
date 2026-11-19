@@ -1,0 +1,31 @@
+{
+  "fechaMiteco": "18/11/2026 18:03:47",
+  "estaciones": [
+    {"provincia":"Albacete","provinciaSlug":"albacete","precios":{"gasolina95":1.5,"diesel":1.3,"dieselPremium":null}},
+    {"provincia":"Albacete","provinciaSlug":"albacete","precios":{"gasolina95":1.4,"diesel":1.3,"dieselPremium":null}},
+    {"provincia":"Albacete","provinciaSlug":"albacete","precios":{"gasolina95":1.4,"diesel":1.3,"dieselPremium":null}},
+    {"provincia":"Albacete","provinciaSlug":"albacete","precios":{"gasolina95":1.4,"diesel":1.3,"dieselPremium":null}},
+    {"provincia":"Albacete","provinciaSlug":"albacete","precios":{"gasolina95":1.4,"diesel":1.3,"dieselPremium":null}},
+    {"provincia":"Albacete","provinciaSlug":"albacete","precios":{"gasolina95":1.4,"diesel":1.3,"dieselPremium":null}},
+    {"provincia":"Albacete","provinciaSlug":"albacete","precios":{"gasolina95":1.4,"diesel":1.3,"dieselPremium":null}},
+    {"provincia":"Albacete","provinciaSlug":"albacete","precios":{"gasolina95":1.4,"diesel":1.3,"dieselPremium":null}},
+    {"provincia":"Albacete","provinciaSlug":"albacete","precios":{"gasolina95":1.4,"diesel":null,"dieselPremium":null}},
+    {"provincia":"Albacete","provinciaSlug":"albacete","precios":{"gasolina95":1.4,"diesel":null,"dieselPremium":null}},
+    {"provincia":"Madrid","provinciaSlug":"madrid","precios":{"gasolina95":1.5,"diesel":"abc","dieselPremium":null}},
+    {"provincia":"Madrid","provinciaSlug":"madrid","precios":{"gasolina95":1.5,"diesel":1.4,"dieselPremium":null}},
+    {"provincia":"Madrid","provinciaSlug":"madrid","precios":{"gasolina95":1.5,"diesel":1.4,"dieselPremium":null}},
+    {"provincia":"Madrid","provinciaSlug":"madrid","precios":{"gasolina95":1.5,"diesel":1.4,"dieselPremium":null}},
+    {"provincia":"Madrid","provinciaSlug":"madrid","precios":{"gasolina95":1.5,"diesel":1.4,"dieselPremium":null}},
+    {"provincia":"Madrid","provinciaSlug":"madrid","precios":{"gasolina95":1.5,"diesel":1.4,"dieselPremium":null}},
+    {"provincia":"Madrid","provinciaSlug":"madrid","precios":{"gasolina95":1.5,"diesel":1.4,"dieselPremium":null}},
+    {"provincia":"Madrid","provinciaSlug":"madrid","precios":{"gasolina95":1.5,"diesel":1.4,"dieselPremium":null}},
+    {"provincia":"Madrid","provinciaSlug":"madrid","precios":{"gasolina95":1.5,"diesel":1.4,"dieselPremium":null}},
+    {"provincia":"Madrid","provinciaSlug":"madrid","precios":{"gasolina95":1.5,"diesel":1.4,"dieselPremium":null}},
+    {"provincia":"Madrid","provinciaSlug":"madrid","precios":{"gasolina95":9.99,"diesel":1.4,"dieselPremium":null}},
+    {"provincia":"Ávila","provinciaSlug":"avila","precios":{"gasolina95":1.2,"diesel":null,"dieselPremium":null}},
+    {"provincia":"Teruel","provinciaSlug":"teruel","precios":{"gasolina95":1.6,"diesel":1.5,"dieselPremium":null}},
+    {"provincia":"Teruel","provinciaSlug":"teruel","precios":{"gasolina95":1.6,"diesel":1.5,"dieselPremium":null}},
+    {"provincia":"Teruel","provinciaSlug":"teruel","precios":{"gasolina95":0.1,"diesel":1.5,"dieselPremium":null}},
+    {"provincia":"Sin slug","precios":{"gasolina95":1.5,"diesel":1.5}}
+  ]
+}
