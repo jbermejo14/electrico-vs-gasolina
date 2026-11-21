@@ -6,7 +6,7 @@
     "dev": "next dev",
     "import-fuel": "node --import tsx scripts/import-fuel-prices.ts",
     "build": "npm run import-fuel && next build --webpack",
-    "test": "node --import tsx --test \"tests/**/*.test.ts\" \"tests/**/*.test.tsx\""
+    "test": "node --import tsx --test tests/*.test.ts tests/*.test.tsx"
   },
   "dependencies": {
     "next": "16.4.6",

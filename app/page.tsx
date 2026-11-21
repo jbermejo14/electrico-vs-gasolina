@@ -20,14 +20,36 @@ const HOME_PATH = '/';
 
 export function generateMetadata(): Metadata {
   const summary = getFuelPriceSummary();
-  const title = homeTitle(summary);
+  const title = `${homeTitle(summary)} | ${SITE_NAME}`;
   const description = homeDescription(summary, getChargingPrices());
   const canonical = absoluteUrl(HOME_PATH);
+  const ogImage = absoluteUrl('/brand/ododex-og.png');
   return {
     title: { absolute: title },
     description,
     alternates: { canonical },
-    openGraph: { title, description, url: canonical, type: 'website', locale: 'es_ES', siteName: SITE_NAME },
+    openGraph: {
+      title,
+      description,
+      url: canonical,
+      type: 'website',
+      locale: 'es_ES',
+      siteName: SITE_NAME,
+      images: [
+        {
+          url: ogImage,
+          width: 1200,
+          height: 630,
+          alt: 'Comparador Coche Eléctrico vs Gasolina · Ododex',
+        },
+      ],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title,
+      description,
+      images: [ogImage],
+    },
   };
 }
 
