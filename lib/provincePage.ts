@@ -1,6 +1,7 @@
 import type { ChargingPrices } from './chargingPrices';
 import { formatEuros, formatMitecoDay, formatPricePerLitre } from './format';
 import { FUEL_LABELS, FUEL_TYPES, type FuelPriceSummary, type FuelType, type ProvinceFuelPrices } from './fuelPrices';
+import { fitTitle } from './seo';
 import { referenceCombustionPer100Km, referenceElectricPer100Km } from './referenceCosts';
 
 /** Datos que necesitan los textos de la página de una provincia. */
@@ -12,6 +13,7 @@ export interface ProvinceContext {
 const PROVINCE_HOME_ONLY_SHARE = 1;
 const PROVINCE_PRICE_DECIMALS = 3;
 const PROVINCE_THOUSANDTHS = 10 ** PROVINCE_PRICE_DECIMALS;
+const PROVINCE_DESCRIPTION_CALL_TO_ACTION = 'Calcula tu ahorro anual.';
 const PROVINCE_FUEL_ARTICLES: Record<FuelType, string> = { gasolina95: 'la', diesel: 'el' };
 
 /**
@@ -53,7 +55,13 @@ export function provinceRankingText(province: ProvinceFuelPrices, ranked: Provin
   return `Ocupa el ${position} del ranking de gasolina 95, de la más barata a la más cara.`;
 }
 
-/** Description de la página de provincia (como máximo 160 caracteres) con los costes por 100 km reales. */
+/** Título completo (con marca) de la página de una provincia; recorta el sufijo antes que el nombre. */
+export function provinceTitle(province: ProvinceFuelPrices): string {
+  const keyword = `Eléctrico o gasolina en ${province.name}`;
+  return fitTitle([`${keyword}: coste por km`, keyword]);
+}
+
+/** Description de la página de provincia (120-160 caracteres) con los costes por 100 km reales. */
 export function provinceDescription({ summary, province }: ProvinceContext, charging: ChargingPrices): string {
   const fuels = FUEL_TYPES.flatMap((fuel) => {
     const average = province[fuel];
@@ -63,6 +71,6 @@ export function provinceDescription({ summary, province }: ProvinceContext, char
   const electric = formatEuros(referenceElectricPer100Km(charging, PROVINCE_HOME_ONLY_SHARE));
   return (
     `Coste de 100 km en ${province.name} (MITECO, ${formatMitecoDay(summary.mitecoDate)}): ` +
-    `${fuels.join(', ')}; eléctrico en casa ${electric}.`
+    `${fuels.join(', ')}; eléctrico en casa ${electric}. ${PROVINCE_DESCRIPTION_CALL_TO_ACTION}`
   );
 }

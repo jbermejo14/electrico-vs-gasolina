@@ -20,11 +20,13 @@ import {
   provinceComparisonSentences,
   provinceDescription,
   provinceRankingText,
+  provinceTitle,
   type ProvinceContext,
 } from '@/lib/provincePage';
 import { getNetworkLinks } from '@/lib/network';
 import { provinceParams } from '@/lib/routes';
-import { BASE_PATH, SECTION_NAME, SITE_NAME, absoluteUrl } from '@/lib/site';
+import { socialMetadata } from '@/lib/seo';
+import { BASE_PATH, SECTION_NAME, absoluteUrl } from '@/lib/site';
 import { formatEuros } from '@/lib/format';
 import { referenceCombustionPer100Km, referenceElectricPer100Km } from '@/lib/referenceCosts';
 
@@ -49,36 +51,14 @@ function provinceContext(slug: string): ProvinceContext {
 export async function generateMetadata({ params }: ProvincePageParams): Promise<Metadata> {
   const { provincia } = await params;
   const context = provinceContext(provincia);
-  const title = `Eléctrico o gasolina en ${context.province.name}: coste por km`;
+  const title = provinceTitle(context.province);
   const description = provinceDescription(context, getChargingPrices());
-  const canonical = absoluteUrl(`/${context.province.pageSlug}`);
-  const ogImage = absoluteUrl('/brand/ododex-og.png');
+  const path = `/${context.province.pageSlug}`;
   return {
-    title,
+    title: { absolute: title },
     description,
-    alternates: { canonical },
-    openGraph: {
-      title,
-      description,
-      url: canonical,
-      type: 'website',
-      locale: 'es_ES',
-      siteName: SITE_NAME,
-      images: [
-        {
-          url: ogImage,
-          width: 1200,
-          height: 630,
-          alt: `Eléctrico o gasolina en ${context.province.name} · Ododex`,
-        },
-      ],
-    },
-    twitter: {
-      card: 'summary_large_image',
-      title,
-      description,
-      images: [ogImage],
-    },
+    alternates: { canonical: absoluteUrl(path) },
+    ...socialMetadata({ title, description, path, imageAlt: `Eléctrico o gasolina en ${context.province.name} · Ododex` }),
   };
 }
 

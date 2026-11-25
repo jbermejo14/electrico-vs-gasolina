@@ -1,15 +1,19 @@
 import type { Metadata } from 'next';
 import { Breadcrumbs } from '@/components/Breadcrumbs';
 import { getTitular, valorOPendiente, FECHA_TEXTOS_LEGALES, type Titular } from '@/lib/legal';
+import { socialMetadata, titleWithBrand } from '@/lib/seo';
 import { absoluteUrl, SITE_NAME } from '@/lib/site';
 
 const RUTA = '/aviso-legal';
 
+const DESCRIPCION = `Aviso legal e información del titular de ${SITE_NAME} conforme al artículo 10 de la LSSI.`;
+
 export const metadata: Metadata = {
   title: 'Aviso legal',
-  description: `Aviso legal e información del titular de ${SITE_NAME} conforme al artículo 10 de la LSSI.`,
+  description: DESCRIPCION,
   robots: { index: false, follow: true },
-  alternates: { canonical: absoluteUrl(RUTA) }
+  alternates: { canonical: absoluteUrl(RUTA) },
+  ...socialMetadata({ title: titleWithBrand('Aviso legal'), description: DESCRIPCION, path: RUTA, imageAlt: 'Aviso legal · Ododex' })
 };
 
 export default function AvisoLegalPage() {

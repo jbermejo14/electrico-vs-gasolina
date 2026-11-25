@@ -94,7 +94,7 @@ test('provinceDescription: cifras reales de 100 km y como máximo 160 caracteres
   const barata = plain(provinceDescription({ summary: SUMMARY, province: province('barata') }, charging));
   assert.equal(
     barata,
-    'Coste de 100 km en Barata (MITECO, 18/11/2026): gasolina 95 9,75 €, diésel 9,35 €; eléctrico en casa 3,40 €.',
+    'Coste de 100 km en Barata (MITECO, 18/11/2026): gasolina 95 9,75 €, diésel 9,35 €; eléctrico en casa 3,40 €. Calcula tu ahorro anual.',
   );
   for (const item of SUMMARY.provinces) {
     const description = provinceDescription({ summary: SUMMARY, province: item }, charging);
@@ -108,8 +108,8 @@ test('provinceDescription: una provincia solo con diésel solo cita el diésel',
   assert.ok(!text.includes('gasolina 95'));
 });
 
-test('homeTitle: mes y año de la fecha de MITECO', () => {
-  assert.equal(homeTitle(SUMMARY), 'Coche eléctrico o gasolina: coste por km en España (noviembre de 2026)');
+test('homeTitle: título con marca que cabe en 60 caracteres sin truncar (el mes cede ante el límite)', () => {
+  assert.equal(homeTitle(SUMMARY), 'Coche eléctrico o gasolina: coste por km en España | Ododex');
 });
 
 test('homeDescription: cifras reales, fecha sin hora y como máximo 160 caracteres', () => {

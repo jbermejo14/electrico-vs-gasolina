@@ -1,13 +1,25 @@
 import type { ChargingPrices } from './chargingPrices';
 import { formatEuros, formatMitecoDay, formatMitecoMonth, formatPricePerLitre } from './format';
 import type { FuelPriceSummary } from './fuelPrices';
+import { fitTitle } from './seo';
 import { referenceCombustionPer100Km, referenceElectricPer100Km } from './referenceCosts';
 
 const HOME_ONLY_HOME_SHARE = 1;
 
-/** Título de la página principal; el mes sale de la fecha de MITECO de los datos. */
+const HOME_TITLE_KEYWORD = 'Coche eléctrico o gasolina: coste por km';
+
+/**
+ * Título completo (con marca) de la página principal. Prefiere incluir el mes de los datos de MITECO,
+ * pero cede ante el límite de longitud antes que truncar.
+ */
 export function homeTitle(summary: FuelPriceSummary): string {
-  return `Coche eléctrico o gasolina: coste por km en España (${formatMitecoMonth(summary.mitecoDate)})`;
+  const month = formatMitecoMonth(summary.mitecoDate);
+  return fitTitle([
+    `${HOME_TITLE_KEYWORD} en España (${month})`,
+    `${HOME_TITLE_KEYWORD} (${month})`,
+    `${HOME_TITLE_KEYWORD} en España`,
+    HOME_TITLE_KEYWORD,
+  ]);
 }
 
 /** Description de la página principal (como máximo 160 caracteres) con las cifras reales. */

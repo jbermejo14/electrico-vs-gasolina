@@ -1,16 +1,20 @@
 import type { Metadata } from 'next';
 import { Breadcrumbs } from '@/components/Breadcrumbs';
 import { FECHA_TEXTOS_LEGALES } from '@/lib/legal';
+import { socialMetadata, titleWithBrand } from '@/lib/seo';
 import { absoluteUrl, SITE_NAME } from '@/lib/site';
 
 const RUTA = '/cookies';
 const URL_COOKIES_GOOGLE = 'https://policies.google.com/technologies/cookies?hl=es';
 
+const DESCRIPCION = `Qué cookies y almacenamiento local usa ${SITE_NAME} y cómo gestionarlos.`;
+
 export const metadata: Metadata = {
   title: 'Política de cookies',
-  description: `Qué cookies y almacenamiento local usa ${SITE_NAME} y cómo gestionarlos.`,
+  description: DESCRIPCION,
   robots: { index: false, follow: true },
-  alternates: { canonical: absoluteUrl(RUTA) }
+  alternates: { canonical: absoluteUrl(RUTA) },
+  ...socialMetadata({ title: titleWithBrand('Política de cookies'), description: DESCRIPCION, path: RUTA, imageAlt: 'Política de cookies · Ododex' })
 };
 
 export default function CookiesPage() {

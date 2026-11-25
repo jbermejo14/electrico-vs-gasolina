@@ -12,44 +12,23 @@ import { formatMitecoDay } from '@/lib/format';
 import { getFuelPriceSummary } from '@/lib/fuelPriceData';
 import { averagePricesOf, provincesWithData } from '@/lib/fuelPrices';
 import { homeDescription, homeTitle } from '@/lib/homePage';
-import { SITE_NAME, absoluteUrl } from '@/lib/site';
+import { socialMetadata } from '@/lib/seo';
+import { absoluteUrl } from '@/lib/site';
 import { faqPageJsonLd, webApplicationJsonLd } from '@/lib/structuredData';
 
 const HOME_PLACE_LABEL = 'España';
 const HOME_PATH = '/';
+const HOME_IMAGE_ALT = 'Comparador Coche Eléctrico vs Gasolina · Ododex';
 
 export function generateMetadata(): Metadata {
   const summary = getFuelPriceSummary();
-  const title = `${homeTitle(summary)} | ${SITE_NAME}`;
+  const title = homeTitle(summary);
   const description = homeDescription(summary, getChargingPrices());
-  const canonical = absoluteUrl(HOME_PATH);
-  const ogImage = absoluteUrl('/brand/ododex-og.png');
   return {
     title: { absolute: title },
     description,
-    alternates: { canonical },
-    openGraph: {
-      title,
-      description,
-      url: canonical,
-      type: 'website',
-      locale: 'es_ES',
-      siteName: SITE_NAME,
-      images: [
-        {
-          url: ogImage,
-          width: 1200,
-          height: 630,
-          alt: 'Comparador Coche Eléctrico vs Gasolina · Ododex',
-        },
-      ],
-    },
-    twitter: {
-      card: 'summary_large_image',
-      title,
-      description,
-      images: [ogImage],
-    },
+    alternates: { canonical: absoluteUrl(HOME_PATH) },
+    ...socialMetadata({ title, description, path: HOME_PATH, imageAlt: HOME_IMAGE_ALT }),
   };
 }
 

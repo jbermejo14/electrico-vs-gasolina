@@ -7,6 +7,7 @@ import { AdSenseScript, getAdSenseClient } from '@/components/AdSenseScript';
 import { getFuelPriceSummary } from '@/lib/fuelPriceData';
 import { homeTitle } from '@/lib/homePage';
 import { getNetworkSections } from '@/lib/network';
+import { socialMetadata } from '@/lib/seo';
 import { absoluteUrl, getSiteUrl, SITE_NAME } from '@/lib/site';
 
 const inter = Inter({
@@ -61,26 +62,12 @@ export const metadata: Metadata = {
   alternates: {
     canonical: homeUrl
   },
-  openGraph: {
-    type: 'website',
-    locale: 'es_ES',
-    url: homeUrl,
-    siteName: SITE_NAME,
-    title: 'Coche eléctrico o gasolina: ¿cuánto cuesta el kilómetro?',
+  ...socialMetadata({
+    title: homeTitle(getFuelPriceSummary()),
     description: siteDescription,
-    images: [
-      {
-        url: absoluteUrl('/brand/ododex-og.png'),
-        width: 1200,
-        height: 630,
-        alt: 'Comparador Coche Eléctrico vs Gasolina · Ododex'
-      }
-    ]
-  },
-  twitter: {
-    card: 'summary_large_image',
-    images: [absoluteUrl('/brand/ododex-og.png')]
-  }
+    path: '/',
+    imageAlt: 'Comparador Coche Eléctrico vs Gasolina · Ododex'
+  })
 };
 
 export default function RootLayout({
